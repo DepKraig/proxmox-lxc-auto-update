@@ -37,7 +37,7 @@ per-container.
 ### 1. Get the files onto your Proxmox host
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/proxmox-lxc-auto-update.git
+git clone https://github.com/DepKraig/proxmox-lxc-auto-update.git
 cd proxmox-lxc-auto-update
 ```
 
