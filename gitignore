@@ -1,0 +1,8 @@
+# Real config/secrets - never commit these, only the .example versions
+config.conf
+lxc-auto-update.conf
+msmtprc
+!msmtprc.example
+
+# Logs
+*.log
