@@ -140,15 +140,7 @@ built-in default in the script.
 
 - **No emails at all**: confirm `mail -s "test" you@example.com` works
   standalone first — that isolates whether the problem is this script or
-  your mail relay.
-- **`sendmail: cannot log to /var/log/msmtp.log: Permission denied`**: this
-  is usually harmless — check the rest of the output for `smtpstatus=250`
-  / `exitcode=EX_OK`, which means the email actually sent fine despite the
-  warning. `setup-email.sh` pre-creates this log file with working
-  permissions (`644`, root-owned); if you skipped that script, run:
-  ```bash
-  touch /var/log/msmtp.log && chown root:root /var/log/msmtp.log && chmod 644 /var/log/msmtp.log
-  ```
+  your mail relay. Check `journalctl -t msmtp` for the actual error.
 - **`535 5.7.8 Username and Password not accepted` (Gmail)**: almost
   always one of: 2-Step Verification isn't enabled on the Gmail account,
   the App Password was mistyped (make sure you strip the spaces Google
