@@ -13,11 +13,26 @@
 # Using a non-Gmail provider instead? Just change host/port/from/user below
 # to match your provider's SMTP settings.
 
+# /etc/msmtprc
+# System-wide msmtp config so the 'mail'/'sendmail' commands relay through Gmail.
+#
+# INSTALL:
+#   1. cp msmtprc.example /etc/msmtprc
+#   2. Replace YOUR_EMAIL@gmail.com and REPLACE_WITH_APP_PASSWORD below
+#      (App Password: https://myaccount.google.com/apppasswords - requires
+#      2-Step Verification enabled on the Google account first)
+#   3. chown root:root /etc/msmtprc && chmod 600 /etc/msmtprc
+#   4. Test:  echo "test body" | mail -s "Proxmox test" YOUR_EMAIL@gmail.com
+#   5. Check `journalctl -t msmtp` if it doesn't arrive
+#
+# Using a non-Gmail provider instead? Just change host/port/from/user below
+# to match your provider's SMTP settings.
+
 defaults
 auth           on
 tls            on
 tls_trust_file /etc/ssl/certs/ca-certificates.crt
-logfile        /var/log/msmtp.log
+syslog         on
 
 account        gmail
 host           smtp.gmail.com
