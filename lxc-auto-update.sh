@@ -300,7 +300,7 @@ create_backup_safety_net() {
 
     local tmp_out
     tmp_out=$(mktemp)
-    if ! vzdump "$ctid" --storage "$BACKUP_STORAGE" --mode stop --compress zstd --quiet 1 > "$tmp_out" 2>&1; then
+    if ! vzdump "$ctid" --storage "$BACKUP_STORAGE" --mode stop --compress zstd > "$tmp_out" 2>&1; then
         cat "$tmp_out" >> "$LOG_FILE"
         rm -f "$tmp_out"
         return 1
@@ -309,6 +309,14 @@ create_backup_safety_net() {
 
     local backup_path
     backup_path=$(grep -oP "creating vzdump archive '\K[^']+" "$tmp_out" | tail -1)
+
+    if [[ -z "$backup_path" ]]; then
+        # Fallback: vzdump succeeded (exit 0) but we couldn't find the path
+        # in its output - ask Proxmox directly for the newest matching backup.
+        backup_path=$(pvesm list "$BACKUP_STORAGE" 2>/dev/null \
+            | awk -v pat="vzdump-lxc-${ctid}-" '$1 ~ pat {print $1}' | sort | tail -1)
+    fi
+
     rm -f "$tmp_out"
 
     if [[ -z "$backup_path" ]]; then
