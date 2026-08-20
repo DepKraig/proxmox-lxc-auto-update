@@ -46,6 +46,10 @@ SNAP_PREFIX="preupdate"
 BACKUP_STORAGE="local"
 BACKUP_RETENTION_DAYS=14
 
+# Notes attached to each backup vzdump creates (visible in the Proxmox
+# GUI's Backups tab). Supports {{guestname}}, {{node}}, {{vmid}}, {{cluster}}.
+BACKUP_NOTES_TEMPLATE="[lxc-auto-update] {{guestname}} (CT {{vmid}}) on {{node}} - pre-update backup"
+
 # Set to "1" to log what would happen without actually changing anything
 DRY_RUN=0
 
@@ -307,7 +311,8 @@ create_backup_safety_net() {
 
     local tmp_out
     tmp_out=$(mktemp)
-    if ! vzdump "$ctid" --storage "$BACKUP_STORAGE" --mode stop --compress zstd > "$tmp_out" 2>&1; then
+    if ! vzdump "$ctid" --storage "$BACKUP_STORAGE" --mode stop --compress zstd \
+        --notes-template "$BACKUP_NOTES_TEMPLATE" > "$tmp_out" 2>&1; then
         cat "$tmp_out" >> "$LOG_FILE"
         rm -f "$tmp_out"
         return 1
