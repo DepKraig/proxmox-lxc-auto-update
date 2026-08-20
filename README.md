@@ -138,6 +138,7 @@ built-in default in the script.
 | `SNAPSHOT_RETENTION_DAYS` | `14` | How long to keep pre-update snapshots |
 | `BACKUP_STORAGE` | `local` | Where vzdump backups go for non-snapshot-capable storage |
 | `BACKUP_RETENTION_DAYS` | `14` | How long to keep pre-update backups |
+| `BACKUP_NOTES_TEMPLATE` | see config | Notes attached to each backup - supports `{{guestname}}`, `{{node}}`, `{{vmid}}`, `{{cluster}}` |
 | `DRY_RUN` | `0` | Set to `1` to log actions without performing them |
 
 ## How the safety net is chosen, and rollback decisions
