@@ -46,9 +46,14 @@ cd proxmox-lxc-auto-update
 ### 2. Set up email alerts
 
 ```bash
+chmod +x setup-email.sh
 ./setup-email.sh              # installs msmtp, msmtp-mta, mailutils
 cp msmtprc.example /etc/msmtprc
-nano /etc/msmtprc             # fill in your email + app password
+nano /etc/msmtprc              # fill in your email + app password
+```
+Fill in your real Gmail address and the App Password, then:
+
+```bash
 chown root:root /etc/msmtprc
 chmod 600 /etc/msmtprc
 ```
