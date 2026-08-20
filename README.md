@@ -10,7 +10,11 @@ per-container.
 ## Features
 
 - Runs on your Proxmox **host**, driving containers via `pct`
-- Snapshots each container immediately before updating it
+- Automatically picks the right pre-update safety net per container based
+  on its storage: fast `pct snapshot`/`pct rollback` on snapshot-capable
+  storage (ZFS, LVM-thin, RBD, Btrfs), or a `vzdump` backup/restore
+  fallback on anything else (e.g. plain `dir` storage) - no manual
+  per-container configuration needed
 - Detects the container's OS and picks the right update command
   (`apt`, `apk`, `dnf`/`yum`, `zypper`, `pacman`) - unrecognized OSes are
   skipped and reported, never guessed at
@@ -19,10 +23,10 @@ per-container.
 - Reboots the container after a successful update and waits for it to
   actually become responsive (not just "running")
 - If the update itself fails, or the container doesn't come back up after
-  reboot, automatically rolls back to the pre-update snapshot
+  reboot, automatically rolls back to the pre-update snapshot/backup
 - Emails you on every failure, with the likely cause, plus a summary email
   at the end of every run
-- Prunes old pre-update snapshots after a configurable retention period
+- Prunes old snapshots/backups after a configurable retention period
 - `DRY_RUN` mode to see exactly what it would do first
 
 ## Requirements
@@ -37,7 +41,7 @@ per-container.
 ### 1. Get the files onto your Proxmox host
 
 ```bash
-git clone https://github.com/DepKraig/proxmox-lxc-auto-update.git
+git clone https://github.com/YOUR_USERNAME/proxmox-lxc-auto-update.git
 cd proxmox-lxc-auto-update
 ```
 
@@ -132,11 +136,23 @@ built-in default in the script.
 | `RESTART_TIMEOUT` | `120` | Seconds to wait for a container to respond after reboot |
 | `RESTART_POLL_INTERVAL` | `5` | Seconds between responsiveness checks |
 | `SNAPSHOT_RETENTION_DAYS` | `14` | How long to keep pre-update snapshots |
+| `BACKUP_STORAGE` | `local` | Where vzdump backups go for non-snapshot-capable storage |
+| `BACKUP_RETENTION_DAYS` | `14` | How long to keep pre-update backups |
 | `DRY_RUN` | `0` | Set to `1` to log actions without performing them |
 
-## How rollback decisions are made
+## How the safety net is chosen, and rollback decisions
 
-- **Snapshot fails** → container is left untouched, update skipped, email sent
+Each container's storage is checked automatically at run time:
+
+- **Snapshot-capable storage** (ZFS, LVM-thin, RBD, Btrfs) → fast `pct
+  snapshot` before the update, `pct rollback` if anything goes wrong
+- **Everything else** (e.g. plain `dir` storage) → `vzdump` backup before
+  the update (briefly stops the container to do it), `pct restore` if
+  anything goes wrong. Slower and needs `BACKUP_STORAGE` configured with
+  free space, but works regardless of the container's own storage type.
+
+Rollback triggers:
+- **Safety net creation fails** (snapshot or backup) → container is left untouched, update skipped, email sent
 - **Package update command exits non-zero** → rolled back immediately, email with the update output
 - **Reboot command itself fails** → rolled back, email sent
 - **Container doesn't respond within `RESTART_TIMEOUT`** → stopped, rolled back, restarted, email sent noting whether it recovered post-rollback
@@ -154,9 +170,11 @@ built-in default in the script.
 - **A container's OS isn't detected**: check `/etc/os-release` inside it.
   If it's missing/nonstandard, add a case for it in `get_update_command()`
   and `detect_os_family()` in `lxc-auto-update.sh` — PRs welcome.
-- **Snapshot fails**: your container's storage backend may not support
-  snapshots (e.g. some directory-storage configurations without a
-  snapshot-capable filesystem).
+- **Snapshot fails** on storage that should support it: check storage
+  health/space with `pvesm status`.
+- **Backup fallback fails**: confirm `BACKUP_STORAGE` in your config
+  actually exists (`pvesm status`) and has "backup" content enabled
+  (Datacenter → Storage → click it → Content), and has free space.
 
 ## Contributing
 
