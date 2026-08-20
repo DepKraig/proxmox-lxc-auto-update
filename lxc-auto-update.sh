@@ -228,7 +228,14 @@ get_update_command() {
             echo 'zypper --non-interactive refresh && zypper --non-interactive update'
             ;;
         arch)
-            echo 'pacman -Syu --noconfirm'
+            # LXC containers can't satisfy pacman's Landlock sandboxing
+            # (needs kernel syscalls blocked by the container's seccomp
+            # profile), so it's disabled here - GPG signature verification,
+            # HTTPS transport, and checksums (the actual package-integrity
+            # checks) are unaffected and stay on. Also initializes the
+            # pacman keyring on first run if it hasn't been already, since
+            # fresh Arch container templates don't ship with one.
+            echo '(grep -q "^DisableSandbox" /etc/pacman.conf || sed -i "/^\[options\]/a DisableSandbox" /etc/pacman.conf) && ([ -d /etc/pacman.d/gnupg ] && [ -n "$(ls -A /etc/pacman.d/gnupg 2>/dev/null)" ] || (pacman-key --init && pacman-key --populate archlinux)) && pacman -Syu --noconfirm'
             ;;
         *)
             echo ""
